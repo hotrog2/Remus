@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./remus-logo.png" />
+    <title>Remus Community Server Manager</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1e1f22;
+        --panel: #2b2d31;
+        --panel-alt: #313338;
+        --line: #1f2023;
+        --text: #dbdee1;
+        --muted: #9ea4ac;
+        --accent: #5865f2;
+        --ok: #3ba55c;
+        --danger: #d83c3e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+        min-height: 100vh;
+      }
+
+      .wrap {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 100vh;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 1.15rem;
+      }
+
+      h2 {
+        font-size: 0.96rem;
+      }
+
+      .brand-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .sub {
+        color: var(--muted);
+        margin: 6px 0 0;
+        font-size: 0.85rem;
+      }
+
+      .status-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #69707a;
+      }
+
+      .dot.online {
+        background: var(--ok);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 8px;
+      }
+
+      .firewall-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .firewall-status {
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+
+      button {
+        border: 0;
+        border-radius: 8px;
+        padding: 9px 10px;
+        cursor: pointer;
+      }
+
+      button.primary {
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+      }
+
+      button.warn {
+        background: #4a2b2e;
+        color: #ffd9dd;
+      }
+
+      button.neutral {
+        background: #3b3f46;
+        color: var(--text);
+      }
+
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .form {
+        margin-top: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .field {
+        display: grid;
+        gap: 4px;
+      }
+
+      .section-block {
+        border: 1px solid #2f3036;
+        border-radius: 10px;
+        padding: 10px;
+        background: #27292f;
+        display: grid;
+        gap: 10px;
+      }
+
+      .section-title {
+        margin: 0;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-dim);
+      }
+
+      .field label {
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+
+      .field input {
+        border: 1px solid #3d4148;
+        border-radius: 8px;
+        background: var(--panel-alt);
+        padding: 8px 10px;
+      }
+
+      .invite-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .field textarea {
+        border: 1px solid #3d4148;
+        border-radius: 8px;
+        background: var(--panel-alt);
+        padding: 8px 10px;
+        min-height: 80px;
+        resize: vertical;
+        color: inherit;
+        font: inherit;
+      }
+
+      .help-text {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      .actions {
+        margin-top: 6px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .icon-row {
+        display: grid;
+        grid-template-columns: 64px 1fr;
+        gap: 12px;
+        align-items: center;
+        background: var(--panel-alt);
+        border: 1px solid #3d4148;
+        border-radius: 10px;
+        padding: 10px;
+      }
+
+      .server-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        object-fit: cover;
+        background: #1d1f24;
+        border: 1px solid #2d3036;
+      }
+
+      .icon-actions {
+        display: grid;
+        gap: 6px;
+      }
+
+      .icon-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .icon-path {
+        font-size: 0.75rem;
+        color: var(--muted);
+        word-break: break-all;
+      }
+
+      .top-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .status-stack {
+        display: grid;
+        gap: 8px;
+        min-width: 260px;
+      }
+
+      .tabs {
+        margin-top: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tab-btn {
+        border: 1px solid #2f3137;
+        border-radius: 999px;
+        padding: 7px 12px;
+        background: #3b3f46;
+        font-size: 0.78rem;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .tab-btn.active {
+        background: var(--accent);
+        border-color: #4752c4;
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .roles-panel {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 12px;
+      }
+
+      .role-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .role-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #3a3f48;
+        font-size: 0.68rem;
+        color: #c7ccd2;
+        background: #26282d;
+      }
+
+      .role-assign-row {
+        background: #1a1c20;
+      }
+
+      .role-assign {
+        display: grid;
+        gap: 8px;
+        padding: 8px 0;
+      }
+
+      .role-assign .assign-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 6px;
+      }
+
+      .role-assign .assign-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+      }
+
+      .role-assign .assign-hint {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .roles-list {
+        display: grid;
+        gap: 6px;
+      }
+
+      .roles-list button {
+        background: #2f3137;
+        border-radius: 8px;
+        padding: 8px;
+        text-align: left;
+      }
+
+      .perm-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 6px;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+      }
+
+      .tab-count {
+        margin-left: 6px;
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: #1f2228;
+        border: 1px solid #353842;
+        font-size: 0.7rem;
+        color: var(--text);
+      }
+
+      .tab-panel {
+        margin-top: 0;
+        flex: 1;
+        min-height: 0;
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .table-wrap {
+        flex: 1;
+        min-height: 0;
+        background: #151618;
+        border: 1px solid #26282d;
+        border-radius: 8px;
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+      }
+
+      th {
+        text-align: left;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        padding: 8px 10px;
+        border-bottom: 1px solid #26282d;
+      }
+
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #26282d;
+        color: #c7ccd2;
+        vertical-align: top;
+      }
+
+      .cell-muted {
+        color: var(--muted);
+      }
+
+      .action-row {
+        display: flex;
+        gap: 6px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #3a3f48;
+        font-size: 0.7rem;
+        color: #c7ccd2;
+        background: #26282d;
+      }
+
+      .badge.ok {
+        color: #baf2c2;
+        background: #233126;
+        border-color: #2c4a32;
+      }
+
+      .badge.warn {
+        color: #ffd9dd;
+        background: #3b2226;
+        border-color: #5b2a31;
+      }
+
+      .empty {
+        padding: 12px;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .logs {
+        background: #151618;
+        border: 1px solid #26282d;
+        border-radius: 8px;
+        padding: 10px;
+        flex: 1;
+        overflow: auto;
+        font-family: Consolas, ui-monospace, monospace;
+        font-size: 0.78rem;
+        white-space: pre-wrap;
+        line-height: 1.35;
+      }
+
+      .log-line {
+        color: #c7ccd2;
+      }
+
+      .log-line.err {
+        color: #ff9aa3;
+      }
+
+      .log-line.info {
+        color: #98b8ff;
+      }
+
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        min-width: 280px;
+        max-width: 400px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease-out;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .notification.success {
+        background: #233126;
+        border-color: #2c4a32;
+        color: #baf2c2;
+      }
+
+      .notification.error {
+        background: #3b2226;
+        border-color: #5b2a31;
+        color: #ffd9dd;
+      }
+
+      .notification.warning {
+        background: #3d3520;
+        border-color: #5a4e26;
+        color: #ffe8b3;
+      }
+
+      .notification-icon {
+        font-size: 1.2rem;
+        flex-shrink: 0;
+      }
+
+      .notification-close {
+        margin-left: auto;
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        padding: 4px;
+        opacity: 0.7;
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .notification-close:hover {
+        opacity: 1;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .validation-error {
+        color: #ff9aa3;
+        font-size: 0.75rem;
+        margin-top: 4px;
+        display: block;
+      }
+
+      .field.has-error input,
+      .field.has-error textarea {
+        border-color: #d83c3e;
+      }
+
+      .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: help;
+        margin-left: 4px;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .tooltip .tooltip-text {
+        visibility: hidden;
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 280px;
+        background: #2b2d31;
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid #3d4148;
+        font-size: 0.78rem;
+        line-height: 1.4;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      }
+
+      .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .tooltip .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #2b2d31 transparent transparent transparent;
+      }
+
+      button.loading {
+        position: relative;
+        color: transparent;
+        pointer-events: none;
+      }
+
+      button.loading::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        margin: -8px 0 0 -8px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .copy-btn {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+
+      .icon-drop-zone {
+        border: 2px dashed #3d4148;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .icon-drop-zone:hover,
+      .icon-drop-zone.drag-over {
+        border-color: var(--primary);
+        background: rgba(88, 101, 242, 0.05);
+      }
+
+      .icon-drop-zone img {
+        max-width: 100px;
+        max-height: 100px;
+        border-radius: 4px;
+      }
+
+      .icon-drop-hint {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin-top: 8px;
+      }
+
+      .table-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+
+      .search-box {
+        flex: 1;
+        min-width: 200px;
+        padding: 8px 12px;
+        border: 1px solid #3d4148;
+        border-radius: 6px;
+        background: #1e1f22;
+        color: var(--text);
+        font-size: 0.85rem;
+      }
+
+      .search-box::placeholder {
+        color: var(--muted);
+      }
+
+      .pagination {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 12px;
+      }
+
+      .pagination button {
+        padding: 6px 12px;
+        min-width: 36px;
+      }
+
+      .pagination .page-info {
+        color: var(--muted);
+        font-size: 0.85rem;
+        padding: 0 12px;
+      }
+
+      .port-check-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .port-check-item {
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #3d4148;
+        background: #1e1f22;
+      }
+
+      .port-check-item.success {
+        border-color: #2c4a32;
+        background: #1a261d;
+      }
+
+      .port-check-item.error {
+        border-color: #5b2a31;
+        background: #261519;
+      }
+
+      .port-check-item .check-label {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .port-check-item .check-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .port-check-item.success .check-value {
+        color: #baf2c2;
+      }
+
+      .port-check-item.error .check-value {
+        color: #ffd9dd;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #3d4148;
+        background: #1e1f22;
+      }
+
+      .stat-label {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .stat-card.primary .stat-value {
+        color: var(--primary);
+      }
+
+      .stat-card.ok .stat-value {
+        color: var(--ok);
+      }
+
+      .stat-card.warn .stat-value {
+        color: #f0b232;
+      }
+
+      @media (max-width: 980px) {
+        .wrap {
+          grid-template-columns: 1fr;
+        }
+        .notification {
+          left: 20px;
+          right: 20px;
+          max-width: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="panel top-header">
+        <div>
+          <h1 class="brand-head">
+            <img class="brand-mark" src="./remus-logo.png" alt="Remus logo" />
+            <span>Remus Community Server Manager</span>
+          </h1>
+          <p class="sub">Configure your community node, then start/stop the backend process.</p>
+        </div>
+        <div class="status-stack">
+          <div class="status-bar">
+            <span id="dot" class="dot"></span>
+            <span id="status-text">Stopped</span>
+            <span id="pid-text"></span>
+          </div>
+          <div class="controls">
+            <button id="start-btn" class="primary">Start Server</button>
+            <button id="stop-btn" class="warn">Stop Server</button>
+            <button id="restart-btn" class="neutral">Restart Server</button>
+            <button id="open-btn" class="neutral">Open Runtime Folder</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="tabs top-tabs">
+        <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="server">Server</button>
+        <button class="tab-btn" data-tab="config">Configuration</button>
+        <button class="tab-btn" data-tab="logs">Logs</button>
+        <button class="tab-btn" data-tab="users">Users <span id="users-count" class="tab-count">0</span></button>
+        <button class="tab-btn" data-tab="bans">Banned <span id="bans-count" class="tab-count">0</span></button>
+        <button class="tab-btn" data-tab="roles">Roles</button>
+        <button class="tab-btn" data-tab="audit">Audit</button>
+        <button class="tab-btn" data-tab="messages">Chat History <span id="messages-count" class="tab-count">0</span></button>
+        <button class="tab-btn" data-tab="uploads">Uploads <span id="uploads-count" class="tab-count">0</span></button>
+        <button class="tab-btn" data-tab="admin-settings">Settings</button>
+        <button id="refresh-btn" class="tab-btn">Refresh</button>
+      </div>
+
+      <section id="tab-dashboard" class="tab-panel active panel">
+        <h2>Dashboard</h2>
+        <p class="sub">Overview of your community server status and statistics.</p>
+        <div class="stats-grid">
+          <div class="stat-card primary">
+            <div class="stat-label">Server Status</div>
+            <div class="stat-value" id="dash-status">Stopped</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Online Users</div>
+            <div class="stat-value" id="dash-users">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Members</div>
+            <div class="stat-value" id="dash-members">0</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-label">Banned Users</div>
+            <div class="stat-value" id="dash-bans">0</div>
+          </div>
+          <div class="stat-card ok">
+            <div class="stat-label">Messages</div>
+            <div class="stat-value" id="dash-messages">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Uploads</div>
+            <div class="stat-value" id="dash-uploads">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Roles</div>
+            <div class="stat-value" id="dash-roles">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Audit Entries</div>
+            <div class="stat-value" id="dash-audit">0</div>
+          </div>
+        </div>
+        <h3 class="section-title">Recent Activity</h3>
+        <div id="recent-logs" class="log-list" style="max-height: 300px; overflow-y: auto;"></div>
+      </section>
+
+      <section id="tab-server" class="tab-panel panel">
+        <h2>Server Controls</h2>
+        <p class="sub">Manage runtime state, firewall rules, and connectivity checks.</p>
+        <div class="firewall-row">
+          <button id="firewall-btn" class="neutral" type="button">Allow Windows Firewall</button>
+          <div id="firewall-status" class="firewall-status">Allows the server port and media UDP range.</div>
+        </div>
+        <div class="firewall-row">
+          <button id="ports-btn" class="neutral" type="button">Verify Ports</button>
+          <div id="ports-status" class="firewall-status">Checks local firewall rules, local listening state, and external TCP reachability via the Remus backend.</div>
+        </div>
+        <div id="port-check-details" class="port-check-grid" style="display: none;"></div>
+      </section>
+
+      <section id="tab-config" class="tab-panel panel">
+        <h2>Configuration</h2>
+        <p class="sub">Update server identity, network, media, and upload settings.</p>
+        <form id="config-form" class="form">
+          <div class="section-block">
+            <h3 class="section-title">Network</h3>
+            <div class="field">
+              <label for="PORT">PORT</label>
+              <input id="PORT" />
+              <small class="help-text">HTTP port for this community server (API + Socket.IO). Must be open to clients.</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_PUBLIC_URL">REMUS_PUBLIC_URL</label>
+              <div class="invite-row">
+                <input id="REMUS_PUBLIC_URL" />
+                <button id="public-url-copy" type="button" class="neutral copy-btn">Copy</button>
+              </div>
+              <small class="help-text">Public URL clients use to reach this server (e.g., http://your-domain:4000).</small>
+            </div>
+            <div class="field">
+              <label for="server-invite">NODE INVITE</label>
+              <div class="invite-row">
+                <input id="server-invite" readonly />
+                <button id="invite-copy" type="button" class="neutral">Copy</button>
+              </div>
+              <small class="help-text">Share this invite with users so they can join via remus(server-id).</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_REGION">REMUS_REGION</label>
+              <input id="REMUS_REGION" />
+              <small class="help-text">Optional region tag shown in host listings (e.g., us-east).</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_CLIENT_ORIGIN">REMUS_CLIENT_ORIGIN</label>
+              <input id="REMUS_CLIENT_ORIGIN" />
+              <small class="help-text">Allowed client origins (comma-separated). Use for CORS.</small>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Branding</h3>
+            <div class="field">
+              <label for="REMUS_SERVER_NAME">REMUS_SERVER_NAME</label>
+              <input id="REMUS_SERVER_NAME" />
+              <small class="help-text">Display name shown in the Remus client server list.</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_SERVER_ICON">REMUS_SERVER_ICON</label>
+              <div id="icon-drop-zone" class="icon-drop-zone">
+                <img id="server-icon-preview" class="server-icon" src="./remus-logo.png" alt="Server icon" />
+                <div class="icon-drop-hint">Click to browse or drag & drop an image</div>
+              </div>
+              <div class="icon-actions" style="margin-top: 12px;">
+                <div class="icon-buttons">
+                  <button id="icon-select" type="button" class="neutral">Choose Icon</button>
+                  <button id="icon-clear" type="button" class="warn">Clear Icon</button>
+                </div>
+                <div id="icon-path" class="icon-path">No custom icon set</div>
+              </div>
+              <input id="REMUS_SERVER_ICON" type="hidden" />
+              <small class="help-text">Custom icon for this community server. Appears in the Remus client list.</small>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Backend</h3>
+            <div class="field">
+              <label for="REMUS_MAIN_BACKEND_URL">REMUS_MAIN_BACKEND_URL</label>
+              <input id="REMUS_MAIN_BACKEND_URL" />
+              <small class="help-text">Central Remus backend URL used for account verification.</small>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Media</h3>
+            <div class="field">
+              <label for="REMUS_MEDIA_LISTEN_IP">REMUS_MEDIA_LISTEN_IP</label>
+              <input id="REMUS_MEDIA_LISTEN_IP" />
+              <small class="help-text">IP the SFU listens on (usually 0.0.0.0).</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_MEDIA_ANNOUNCED_IP">
+                REMUS_MEDIA_ANNOUNCED_IP
+                <span class="tooltip">ℹ️
+                  <span class="tooltip-text">This is the public IP address that clients will use to connect for voice/video. If your server is behind NAT/router, set this to your public IP. Leave empty to auto-detect from PUBLIC_URL.</span>
+                </span>
+              </label>
+              <input id="REMUS_MEDIA_ANNOUNCED_IP" />
+              <small class="help-text">Public IP clients should use for media (set to your public IP for NAT).</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_MEDIA_MIN_PORT">REMUS_MEDIA_MIN_PORT</label>
+              <input id="REMUS_MEDIA_MIN_PORT" />
+              <small class="help-text">Start of UDP port range for media (must be open/forwarded).</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_MEDIA_MAX_PORT">REMUS_MEDIA_MAX_PORT</label>
+              <input id="REMUS_MEDIA_MAX_PORT" />
+              <small class="help-text">End of UDP port range for media (must be open/forwarded).</small>
+            </div>
+            <div class="field">
+              <label for="REMUS_ICE_SERVERS">
+                REMUS_ICE_SERVERS (JSON)
+                <span class="tooltip">ℹ️
+                  <span class="tooltip-text">STUN servers help clients discover their public IP. TURN servers relay traffic when direct connection fails. Format: [{"urls":["stun:server"]}, {"urls":["turn:server"], "username":"user", "credential":"pass"}]</span>
+                </span>
+              </label>
+              <textarea id="REMUS_ICE_SERVERS" spellcheck="false"></textarea>
+              <small class="help-text">ICE server list for WebRTC (STUN/TURN). JSON array of objects with urls/username/credential.</small>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Uploads</h3>
+            <div class="field">
+              <label for="REMUS_FILE_LIMIT_MB">REMUS_FILE_LIMIT_MB</label>
+              <input id="REMUS_FILE_LIMIT_MB" />
+              <small class="help-text">Max upload size in MB for attachments.</small>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="primary">Save Settings</button>
+            <button id="reload-btn" type="button" class="neutral">Reload Settings</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="tab-logs" class="tab-panel panel">
+        <h2>Logs</h2>
+        <div id="logs" class="logs"></div>
+      </section>
+
+      <section id="tab-users" class="tab-panel panel">
+        <h2>Users</h2>
+        <div class="table-controls">
+          <input type="text" id="users-search" class="search-box" placeholder="Search users by username or email..." />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Created</th>
+                <th>Last Seen</th>
+                <th>Status</th>
+                <th>Roles</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-body">
+              <tr>
+                <td class="empty" colspan="7">Loading users...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="users-pagination" class="pagination" style="display: none;"></div>
+      </section>
+
+      <section id="tab-bans" class="tab-panel panel">
+        <h2>Banned Users</h2>
+        <div class="table-controls">
+          <input type="text" id="bans-search" class="search-box" placeholder="Search banned users..." />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>User ID</th>
+                <th>Banned At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bans-body">
+              <tr>
+                <td class="empty" colspan="4">Loading banned users...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="bans-pagination" class="pagination" style="display: none;"></div>
+      </section>
+
+      <section id="tab-roles" class="tab-panel panel">
+        <h2>Roles</h2>
+        <div class="roles-panel">
+          <div class="roles-list" id="roles-list"></div>
+          <div class="role-editor">
+            <h3 id="role-editor-title">Select a role</h3>
+            <div class="field">
+              <label for="role-name">Role name</label>
+              <input id="role-name" />
+            </div>
+            <div class="field">
+              <label for="role-color">Role color</label>
+              <input id="role-color" type="color" />
+            </div>
+            <div class="field">
+              <label class="checkbox-row">
+                <input id="role-hoist" type="checkbox" />
+                Hoist role in member list
+              </label>
+            </div>
+            <div class="perm-grid" id="role-perms"></div>
+            <div class="actions">
+              <button id="role-save" class="primary" type="button">Save Role</button>
+              <button id="role-delete" class="warn" type="button">Delete Role</button>
+            </div>
+            <div id="role-error" class="firewall-status"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-audit" class="tab-panel panel">
+        <h2>Audit Log</h2>
+        <div class="table-controls">
+          <input type="text" id="audit-search" class="search-box" placeholder="Search audit log..." />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Actor</th>
+                <th>Target</th>
+              </tr>
+            </thead>
+            <tbody id="audit-body">
+              <tr>
+                <td class="empty" colspan="4">Loading audit log...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="audit-pagination" class="pagination" style="display: none;"></div>
+      </section>
+
+      <section id="tab-admin-settings" class="tab-panel panel">
+        <h2>Admin Settings</h2>
+        <div class="field">
+          <label for="audit-max">Audit log max entries</label>
+          <input id="audit-max" type="number" min="100" />
+        </div>
+        <div class="field">
+          <label for="timeout-max">Max timeout minutes</label>
+          <input id="timeout-max" type="number" min="1" />
+        </div>
+        <div class="actions">
+          <button id="settings-save" class="primary" type="button">Save Settings</button>
+        </div>
+        <div id="settings-status" class="firewall-status"></div>
+      </section>
+
+      <section id="tab-messages" class="tab-panel panel">
+        <h2>Chat History</h2>
+        <div class="table-controls">
+          <input type="text" id="messages-search" class="search-box" placeholder="Search messages..." />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Channel</th>
+                <th>Author</th>
+                <th>Message</th>
+                <th>Attachments</th>
+              </tr>
+            </thead>
+            <tbody id="messages-body">
+              <tr>
+                <td class="empty" colspan="5">Loading messages...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="messages-pagination" class="pagination" style="display: none;"></div>
+      </section>
+
+      <section id="tab-uploads" class="tab-panel panel">
+        <h2>Uploads</h2>
+        <div class="table-controls">
+          <input type="text" id="uploads-search" class="search-box" placeholder="Search uploads..." />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Channel</th>
+                <th>Author</th>
+                <th>File</th>
+                <th>Size</th>
+                <th>Type</th>
+                <th>URL</th>
+              </tr>
+            </thead>
+            <tbody id="uploads-body">
+              <tr>
+                <td class="empty" colspan="7">Loading uploads...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="uploads-pagination" class="pagination" style="display: none;"></div>
+      </section>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

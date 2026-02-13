@@ -1,0 +1,59 @@
+{
+  "name": "remus-community-server",
+  "version": "1.0.0",
+  "description": "Remus self-hosted community server manager",
+  "author": "Remus",
+  "private": true,
+  "type": "module",
+  "main": "manager/main.cjs",
+  "scripts": {
+    "dev:server": "node --watch src/index.js",
+    "start:server": "node src/index.js",
+    "start": "electron .",
+    "dev": "electron .",
+    "build:exe": "electron-builder --win portable --x64"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mediasoup": "^3.19.17",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.0.5"
+  },
+  "devDependencies": {
+    "electron": "^34.5.8",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.remus.communityserver",
+    "productName": "Remus Community Server Manager",
+    "directories": {
+      "output": "release"
+    },
+    "asarUnpack": [
+      "node_modules/mediasoup/worker/**"
+    ],
+    "files": [
+      "manager/**/*",
+      "src/**/*",
+      "data/**/*",
+      ".env.example",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  }
+}
