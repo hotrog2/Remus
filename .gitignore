@@ -6,6 +6,7 @@ community-server/node_modules/
 server/uploads/
 server/data/db.json
 community-server/uploads/
+community-server/data/
 community-server/data/db.json
 client/dist/
 client/release/
