@@ -9,6 +9,42 @@ The **central Remus backend** (account system + token verification) is intention
 - `community-server/` – Self-hosted community node + GUI manager
 - `sounds/` – Shared UI sound assets
 
+## Features
+
+### Remus Client
+
+- Secret-username login (no email)
+- Display names and per-server nicknames
+- Persistent server list (join once with invite or URL)
+- Text channels with file uploads and progress
+- Voice channels with:
+  - voice activity, push-to-talk, or always-transmit modes
+  - per-user volume controls
+  - speaking indicators
+- Screenshare with selectable screen/app and viewer switching
+- Audio device selection + mic test meter
+- Password recovery key flow (shown once on registration)
+
+### Community Server
+
+- Self-hosted single node = single community (guild)
+- Text, voice, and category channels
+- Roles and permissions (Discord-style)
+- Member management: roles, kick, ban, timeouts, mute/deafen
+- Audit log + chat history + upload history
+- File uploads + download links
+- Server icon and invite code display
+- Voice + screenshare transport (WebRTC via mediasoup)
+
+### Community Server Manager (GUI)
+
+- Configure `.env` values
+- Start/stop/restart server
+- View live logs
+- Windows Firewall rule helper
+- Port verification (local + backend-assisted checks)
+- Manage users, roles, bans, audit, messages, uploads
+
 ## Architecture (high level)
 
 1. Users sign in to your **central Remus backend** using **secret username + password**.
@@ -70,6 +106,15 @@ Full details are in `community-server/CONFIG.md`. Highlights:
 - `REMUS_FILE_LIMIT_MB`, `REMUS_UPLOADS_DIR`
 - `REMUS_MEDIA_ANNOUNCED_IP`, `REMUS_MEDIA_MIN_PORT`, `REMUS_MEDIA_MAX_PORT`, `REMUS_ICE_SERVERS`
 - `REMUS_ADMIN_KEY` – optional; admin endpoints are local-only
+
+## Ports and Firewall
+
+Community server hosts must allow:
+
+- TCP: `PORT` (default `4000`)
+- UDP: `REMUS_MEDIA_MIN_PORT`–`REMUS_MEDIA_MAX_PORT` (default `40000-49999`)
+
+The server manager can apply Windows Firewall rules and run port checks.
 
 ## Notes
 
