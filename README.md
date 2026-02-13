@@ -25,7 +25,7 @@ The Remus platform does not host community chat servers. Users self-host `commun
 
 ### Features
 
-- Email registration/login
+- Secret-username registration/login
 - JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/me`)
 - Token verification endpoint for community servers (`/api/auth/verify`)
 - Self-host registration endpoints:
