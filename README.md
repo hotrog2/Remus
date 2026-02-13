@@ -1,71 +1,39 @@
 # Remus
 
-Remus is split into two backend roles:
+Remus is a self-hostable chat platform. This repository contains the **Remus Client** and the **Remus Community Server Manager**.  
+The **central Remus backend** (account system + token verification) is intentionally **not included** here for security.
 
-- `server/` = central backend only (account registration/login + self-host registration)
-- `community-server/` = self-hosted community node (chat/channels/files/voice/screenshare)
+## Components
 
-The Remus platform does not host community chat servers. Users self-host `community-server` instances.
+- `client/` – Remus Client (Electron + React)
+- `community-server/` – Self-hosted community node + GUI manager
+- `sounds/` – Shared UI sound assets
 
-## Architecture
+## Architecture (high level)
 
-1. Users authenticate against the central backend (`server/`).
-2. The desktop client connects to a selected self-hosted `community-server` URL.
-3. The community server validates user tokens with central backend endpoint `/api/auth/verify`.
-4. Community server sends heartbeat to central backend using its host token.
+1. Users sign in to your **central Remus backend** using **secret username + password**.
+2. The Remus Client connects to a **community server** via invite code `remus(<server-id>)` or direct URL.
+3. The community server validates user tokens against your backend.
 
-## Repository layout
+## Build
 
-- `server/`: central backend (auth + host registry)
-- `community-server/`: self-hosted chat backend
-- `client/`: desktop client (React + Electron)
-- Root scripts: helper scripts for local dev setup/start
-
-## Central backend (platform)
-
-### Features
-
-- Secret-username registration/login
-- JWT auth (`/api/auth/register`, `/api/auth/login`, `/api/me`)
-- Token verification endpoint for community servers (`/api/auth/verify`)
-- Self-host registration endpoints:
-  - `POST /api/hosts` (create host token)
-  - `GET /api/hosts/my`
-  - `GET /api/hosts/public`
-  - `POST /api/hosts/heartbeat`
-
-### Run
+### Remus Client (single EXE)
 
 ```powershell
-.\server\start-server.bat
-```
-
-## Community server (self-hosted node)
-
-### Features
-
-- Guild/channel/message APIs
-- File uploads
-- Socket.IO realtime events
-- Voice/screen-share signaling
-- Auth delegated to central backend (`REMUS_MAIN_BACKEND_URL`)
-- Built-in GUI manager for setup/operations:
-  - edit server settings (`.env`)
-  - start/stop server process
-  - view live server logs
-  - open runtime folder (`.env`, `data`, `uploads`)
-
-### Run manager in dev
-
-```powershell
-cd .\community-server
+cd .\client
 npm install
-npm run start
+npm run build:exe
 ```
 
-This opens the Community Server Manager GUI.
+Output:
+- `client\release\Remus Client 1.0.0.exe`
 
-### Build single-file EXE (portable)
+Or use:
+```powershell
+.\client\build-client-exe.bat
+```
+
+### Remus Community Server Manager (single EXE)
 
 ```powershell
 cd .\community-server
@@ -74,76 +42,37 @@ npm run build:exe
 ```
 
 Output:
-
 - `community-server\release\Remus Community Server Manager 1.0.0.exe`
 
-On first launch, the EXE creates runtime files in:
+## Run
 
-- `%APPDATA%\Remus Community Server Manager\runtime\`
+1. Launch **Remus Community Server Manager**.
+2. Configure `.env` (stored in `%APPDATA%\Remus Community Server Manager\runtime\`).
+3. Start the server process.
+4. Share the invite shown in the manager: `remus(<server-id>)`.
 
-## Desktop client (.exe)
+## Configuration
 
-Build:
-
-```powershell
-.\client\build-client-exe.bat
-```
-
-Run:
-
-- `client\release\Remus-win32-x64\Remus.exe`
-
-The client logs into central backend, then you connect it to a community server URL from inside the UI.
-
-## Full local dev start
-
-```powershell
-.\setup.bat
-.\server\start-server.bat
-cd .\community-server
-npm run start
-```
-
-Then launch the client EXE:
-
-- `client\release\Remus-win32-x64\Remus.exe`
-
-## Generate a self-host registration file
-
-1. Login and obtain a user JWT from central backend (`/api/auth/login`).
-2. Generate host env file:
-
-```powershell
-.\server\create-remus-server-file.bat --token <JWT> --name "My Community" --publicUrl "http://my-host:4000" --out remus-community.env
-```
-
-3. Give host user the Community Server Manager EXE + generated env values.
-4. Host user opens the Community Server Manager EXE, pastes values, then starts server.
-
-## Environment variables
-
-### Central backend (`server/.env`)
-
-- `PORT` default `3001`
-- `REMUS_CLIENT_ORIGIN` default `http://localhost:5173,null,file://`
-- `REMUS_JWT_SECRET` JWT signing secret
-- `REMUS_PUBLIC_BACKEND_URL` URL embedded in generated host files
-
-### Community server (`.env` in runtime folder)
-
-- EXE runtime path: `%APPDATA%\Remus Community Server Manager\runtime\.env`
-- Dev mode path: `community-server/.env`
-
-- `PORT` default `4000`
-- `REMUS_SERVER_NAME`
-- `REMUS_PUBLIC_URL`
-- `REMUS_REGION`
-- `REMUS_MAIN_BACKEND_URL` central backend URL
-- `REMUS_HOST_TOKEN` host token from central backend
-- `REMUS_CLIENT_ORIGIN` allowed client origins
-- `REMUS_FILE_LIMIT_MB` upload max size in MB
+Full details are in `community-server/CONFIG.md`. Highlights:
 
 ### Client (`client/.env`)
 
-- `VITE_AUTH_BASE` central backend URL
-- `VITE_DEFAULT_COMMUNITY_BASE` optional prefilled community URL
+- `VITE_AUTH_BASE` – URL of your central Remus backend (required)
+- `VITE_DEFAULT_COMMUNITY_BASE` – optional default community server URL
+
+### Community Server (`.env` inside runtime)
+
+- `REMUS_MAIN_BACKEND_URL` – central backend URL (required)
+- `PORT`, `REMUS_SERVER_NAME`, `REMUS_PUBLIC_URL`, `REMUS_REGION`
+- `REMUS_CLIENT_ORIGIN` – comma-separated allowed client origins  
+  Local `http://127.0.0.1:*` / `http://localhost:*` are accepted by default for the packaged client.
+- `REMUS_ALLOW_FILE_ORIGIN` / `REMUS_ALLOW_NULL_ORIGIN` – **off by default**; not recommended
+- `REMUS_FILE_LIMIT_MB`, `REMUS_UPLOADS_DIR`
+- `REMUS_MEDIA_ANNOUNCED_IP`, `REMUS_MEDIA_MIN_PORT`, `REMUS_MEDIA_MAX_PORT`, `REMUS_ICE_SERVERS`
+- `REMUS_ADMIN_KEY` – optional; admin endpoints are local-only
+
+## Notes
+
+- Email is **not used**. Accounts use **secret username + password**.
+- Recovery keys are shown **once** during registration.
+- The central backend is **not part of this repo** by design.

@@ -816,7 +816,7 @@
             <img class="brand-mark" src="./remus-logo.png" alt="Remus logo" />
             <span>Remus Community Server Manager</span>
           </h1>
-          <p class="sub">Configure your community node, then start/stop the backend process.</p>
+          <p class="sub">Configure your community node, then start/stop the community server process.</p>
         </div>
         <div class="status-stack">
           <div class="status-bar">
@@ -1038,20 +1038,20 @@
 
       <section id="tab-users" class="tab-panel panel">
         <h2>Users</h2>
-        <div class="table-controls">
-          <input type="text" id="users-search" class="search-box" placeholder="Search users by username or email..." />
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Created</th>
-                <th>Last Seen</th>
-                <th>Status</th>
-                <th>Roles</th>
-                <th>Actions</th>
+          <div class="table-controls">
+            <input type="text" id="users-search" class="search-box" placeholder="Search users by display name or ID..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Display Name</th>
+                  <th>User ID</th>
+                  <th>Created</th>
+                  <th>Last Seen</th>
+                  <th>Status</th>
+                  <th>Roles</th>
+                  <th>Actions</th>
               </tr>
             </thead>
             <tbody id="users-body">
@@ -1066,17 +1066,17 @@
 
       <section id="tab-bans" class="tab-panel panel">
         <h2>Banned Users</h2>
-        <div class="table-controls">
-          <input type="text" id="bans-search" class="search-box" placeholder="Search banned users..." />
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Username</th>
-                <th>User ID</th>
-                <th>Banned At</th>
-                <th>Actions</th>
+          <div class="table-controls">
+            <input type="text" id="bans-search" class="search-box" placeholder="Search banned users by name or ID..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Display Name</th>
+                  <th>User ID</th>
+                  <th>Banned At</th>
+                  <th>Actions</th>
               </tr>
             </thead>
             <tbody id="bans-body">

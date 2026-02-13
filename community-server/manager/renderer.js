@@ -460,6 +460,17 @@ function getMemberById(userId) {
   return membersState.find((member) => member.id === userId) || null;
 }
 
+function resolveDisplayName(user) {
+  if (!user) return "Unknown";
+  const member = getMemberById(user.id);
+  const nickname = (member?.nickname || "").trim();
+  if (nickname) return nickname;
+  const direct = (user.displayName || user.username || "").trim();
+  if (direct) return direct;
+  if (user.id) return `User ${String(user.id).slice(0, 6)}`;
+  return "Unknown";
+}
+
 function getAssignableRoles() {
   return rolesState.filter((role) => role && role.name !== "@everyone" && role.id !== role.guildId);
 }
@@ -501,12 +512,13 @@ function renderUsers(users) {
 
   for (const user of list) {
     const row = document.createElement("tr");
+    const displayName = resolveDisplayName(user);
     const username = document.createElement("td");
-    username.textContent = user.username || user.id || "Unknown";
+    username.textContent = displayName;
 
-    const email = document.createElement("td");
-    email.textContent = user.email || "-";
-    email.className = "cell-muted";
+    const userId = document.createElement("td");
+    userId.textContent = user.id || "-";
+    userId.className = "cell-muted";
 
     const created = document.createElement("td");
     created.textContent = formatDate(user.createdAt);
@@ -546,7 +558,7 @@ function renderUsers(users) {
     kickBtn.textContent = "Kick";
     kickBtn.disabled = !user.isMember;
     kickBtn.addEventListener("click", async () => {
-      const ok = confirm(`Kick ${user.username || user.id}? This removes all of their community data.`);
+      const ok = confirm(`Kick ${displayName}? This removes all of their community data.`);
       if (!ok) return;
       kickBtn.disabled = true;
       try {
@@ -564,7 +576,7 @@ function renderUsers(users) {
     banBtn.textContent = "Ban";
     banBtn.disabled = !!user.isBanned;
     banBtn.addEventListener("click", async () => {
-      const ok = confirm(`Ban ${user.username || user.id}? This removes all data and blocks rejoin.`);
+      const ok = confirm(`Ban ${displayName}? This removes all data and blocks rejoin.`);
       if (!ok) return;
       banBtn.disabled = true;
       try {
@@ -583,7 +595,7 @@ function renderUsers(users) {
     actions.appendChild(actionRow);
 
     row.appendChild(username);
-    row.appendChild(email);
+    row.appendChild(userId);
     row.appendChild(created);
     row.appendChild(lastSeen);
     row.appendChild(status);
@@ -772,9 +784,9 @@ function renderBans(bans) {
 
   for (const entry of list) {
     const row = document.createElement("tr");
-
+    const displayName = resolveDisplayName(entry.profile || { id: entry.userId });
     const username = document.createElement("td");
-    username.textContent = entry.profile?.username || `User ${String(entry.userId || "").slice(0, 6)}` || "Unknown";
+    username.textContent = displayName;
 
     const userId = document.createElement("td");
     userId.textContent = entry.userId || "-";
@@ -792,7 +804,7 @@ function renderBans(bans) {
     unbanBtn.className = "neutral";
     unbanBtn.textContent = "Unban";
     unbanBtn.addEventListener("click", async () => {
-      const ok = confirm(`Unban ${entry.profile?.username || entry.userId}?`);
+      const ok = confirm(`Unban ${displayName}?`);
       if (!ok) return;
       unbanBtn.disabled = true;
       try {

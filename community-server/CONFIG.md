@@ -49,21 +49,21 @@ This document describes all environment variables used by the Remus community se
 - **Type**: Comma-separated list of URLs
 - **Default**: `http://localhost:5173`
 - **Description**: Allowed origins for CORS requests
-- **Security**: Only list trusted client origins
+- **Security**: Only list trusted client origins. Local `http://127.0.0.1:*` / `http://localhost:*` are accepted by default for the packaged client.
 - **Example**: `REMUS_CLIENT_ORIGIN=http://localhost:5173,https://app.example.com`
 
 ### `REMUS_ALLOW_FILE_ORIGIN`
 - **Type**: Boolean (`1` or `0`)
 - **Default**: `0`
-- **Description**: Allow `file://` origin for Electron apps
-- **Security**: Only enable for desktop applications
+- **Description**: Allow `file://` origin for legacy desktop builds
+- **Security**: Not recommended. Prefer the default packaged client (uses local `http://127.0.0.1`).
 - **Example**: `REMUS_ALLOW_FILE_ORIGIN=1`
 
 ### `REMUS_ALLOW_NULL_ORIGIN`
 - **Type**: Boolean (`1` or `0`)
 - **Default**: `0`
 - **Description**: Allow `null` origin
-- **Security**: Generally unsafe. Only for specific use cases.
+- **Security**: Generally unsafe. Avoid unless you fully understand the risk.
 - **Example**: `REMUS_ALLOW_NULL_ORIGIN=0`
 
 ## File Upload Configuration
@@ -211,7 +211,6 @@ REMUS_MAIN_BACKEND_URL=http://localhost:3001
 
 # CORS
 REMUS_CLIENT_ORIGIN=http://localhost:5173
-REMUS_ALLOW_FILE_ORIGIN=1
 
 # File uploads
 REMUS_FILE_LIMIT_MB=100

@@ -1072,8 +1072,7 @@ app.get("/api/admin/users", requireAdmin, (req, res) => {
   const guild = store.getNodeGuild();
   const users = store.listProfiles().map((profile) => ({
     id: profile.id,
-    username: profile.username,
-    email: profile.email || null,
+    displayName: profile.username,
     createdAt: profile.createdAt,
     lastSeenAt: profile.lastSeenAt || null,
     isMember: guild ? guild.memberIds.includes(profile.id) : false,
@@ -1086,7 +1085,14 @@ app.get("/api/admin/bans", requireAdmin, (req, res) => {
   const bans = store.listBans().map((entry) => ({
     userId: entry.userId,
     bannedAt: entry.bannedAt || null,
-    profile: store.getProfile(entry.userId)
+    profile: (() => {
+      const profile = store.getProfile(entry.userId);
+      if (!profile) return null;
+      return {
+        id: profile.id,
+        displayName: profile.username
+      };
+    })()
   }));
   return res.json({ bans });
 });
