@@ -8,7 +8,7 @@ import express from "express";
 import multer from "multer";
 import { Server } from "socket.io";
 import { v4 as uuid } from "uuid";
-import { authMiddleware, socketAuth, getMainBackendUrl } from "./identity.js";
+import { authMiddleware, resolveUserFromToken, socketAuth, getMainBackendUrl } from "./identity.js";
 import { configureSocket } from "./socket.js";
 import { createSfu } from "./sfu.js";
 import { Store } from "./store.js";
@@ -248,6 +248,15 @@ function allowRate(key, limit, windowMs) {
   return true;
 }
 
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateBuckets.entries()) {
+    if (!entry || entry.resetAt <= now) {
+      rateBuckets.delete(key);
+    }
+  }
+}, 60_000);
+
 function rateLimitOr(res, key, limit, windowMs) {
   if (!allowRate(key, limit, windowMs)) {
     res.status(429).json({ error: "Too many requests. Please slow down." });
@@ -395,7 +404,6 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: "10mb" }));
-app.use("/uploads", express.static(uploadsDir));
 app.use("/role-icons", express.static(roleIconsDir));
 
 function requireNotBanned(req, res, next) {
@@ -416,6 +424,54 @@ function requirePermission(req, res, perm, channelId = null) {
     return res.status(403).json({ error: "Forbidden" });
   }
   return null;
+}
+
+async function fileAuthMiddleware(req, res, next) {
+  const header = req.headers.authorization || "";
+  const headerToken = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const queryToken = typeof req.query?.token === "string" ? req.query.token.trim() : "";
+  const token = headerToken || queryToken;
+
+  if (!token) {
+    return res.status(401).json({ error: "Missing token" });
+  }
+
+  try {
+    const user = await resolveUserFromToken(token);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+    req.auth = { token, user };
+    return next();
+  } catch {
+    return res.status(503).json({ error: "Main backend auth verification unavailable" });
+  }
+}
+
+function normalizeMessageAttachments(channelId, authorId, rawAttachments) {
+  const items = Array.isArray(rawAttachments) ? rawAttachments : [];
+  const attachments = [];
+  const seen = new Set();
+
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    const uploadId = String(item.id || "").trim();
+    const uploadUrl = String(item.url || "").trim();
+    const upload = uploadId ? store.getUploadById(uploadId) : uploadUrl ? store.getUploadByUrl(uploadUrl) : null;
+    if (!upload) continue;
+    if (upload.channelId !== channelId || upload.authorId !== authorId) continue;
+    if (seen.has(upload.id)) continue;
+    seen.add(upload.id);
+    attachments.push({
+      id: upload.id,
+      name: upload.name,
+      size: upload.size,
+      mimeType: upload.mimeType,
+      url: upload.url
+    });
+  }
+
+  return attachments;
 }
 
 function getMemberTopPosition(guildId, userId) {
@@ -464,6 +520,40 @@ function serializeMember(member) {
     joinedAt: member.joinedAt || null
   };
 }
+
+app.get("/uploads/:filename", fileAuthMiddleware, requireNotBanned, (req, res) => {
+  const filename = path.basename(String(req.params.filename || ""));
+  if (!filename) {
+    return res.status(404).json({ error: "File not found" });
+  }
+
+  const uploadUrl = `/uploads/${filename}`;
+  const upload = store.getUploadByUrl(uploadUrl);
+  if (!upload) {
+    return res.status(404).json({ error: "File not found" });
+  }
+
+  const channel = store.getChannelById(upload.channelId);
+  if (!channel) {
+    return res.status(404).json({ error: "File not found" });
+  }
+
+  const perms = store.getPermissions(channel.guildId, req.auth.user.id, channel.id);
+  if ((perms & PERMISSIONS.READ_HISTORY) !== PERMISSIONS.READ_HISTORY) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const filePath = path.join(uploadsDir, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "File not found" });
+  }
+
+  res.setHeader("Cache-Control", "private, no-store");
+  if (upload.mimeType) {
+    res.type(upload.mimeType);
+  }
+  return res.sendFile(filePath);
+});
 
 app.get("/api/health", (_, res) => {
   res.json({
@@ -973,9 +1063,7 @@ app.post("/api/channels/:channelId/messages", authMiddleware, requireNotBanned, 
   }
 
   const content = (req.body.content || "").toString().trim().slice(0, 2000);
-  const attachments = Array.isArray(req.body.attachments)
-    ? req.body.attachments.filter((item) => item && typeof item.url === "string")
-    : [];
+  const attachments = normalizeMessageAttachments(channelId, req.auth.user.id, req.body.attachments);
   const replyToId = String(req.body.replyToId || "").trim();
   if (replyToId) {
     const reply = store.getMessageById(replyToId);
@@ -1122,8 +1210,8 @@ app.get("/api/admin/users", requireAdmin, (req, res) => {
   const users = store.listProfiles().map((profile) => ({
     id: profile.id,
     displayName: profile.username,
-    createdAt: profile.createdAt,
-    lastSeenAt: profile.lastSeenAt || null,
+    createdAt: profile.created_at || profile.createdAt || null,
+    lastSeenAt: profile.last_seen_at || profile.lastSeenAt || null,
     isMember: guild ? guild.memberIds.includes(profile.id) : false,
     isBanned: store.isBanned(profile.id)
   }));
@@ -1348,13 +1436,6 @@ app.patch("/api/admin/settings", requireAdmin, (req, res) => {
   return res.json({ settings });
 });
 
-app.use((error, _, res, __) => {
-  if (error?.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({ error: "File is too large" });
-  }
-  return res.status(500).json({ error: "Internal server error" });
-});
-
 async function sendHeartbeat() {
   try {
     if (!SERVER_ID) {
@@ -1394,6 +1475,10 @@ app.use((err, req, res, next) => {
 
   if (res.headersSent) {
     return next(err);
+  }
+
+  if (err?.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ error: "File is too large" });
   }
 
   const status = err.status || err.statusCode || 500;

@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("remusManager", {
   openFolder: () => ipcRenderer.invoke("manager:open-folder"),
   getIconInfo: () => ipcRenderer.invoke("manager:icon-info"),
   selectIcon: () => ipcRenderer.invoke("manager:icon-select"),
+  setIconFromPath: (sourcePath) => ipcRenderer.invoke("manager:icon-set-path", sourcePath),
   clearIcon: () => ipcRenderer.invoke("manager:icon-clear"),
   allowFirewall: (config) => ipcRenderer.invoke("manager:firewall-allow", config),
   checkPorts: (config) => ipcRenderer.invoke("manager:ports-check", config),

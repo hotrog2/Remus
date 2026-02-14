@@ -147,6 +147,34 @@ function resolveIconFromConfig(config) {
   };
 }
 
+function setIconFromSource(sourcePath) {
+  if (!sourcePath || !fs.existsSync(sourcePath)) {
+    throw new Error("Icon file does not exist.");
+  }
+
+  const ext = path.extname(sourcePath).toLowerCase() || ".png";
+  const allowed = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
+  if (!allowed.has(ext)) {
+    throw new Error("Unsupported icon format. Use PNG, JPG, WEBP, or GIF.");
+  }
+
+  const destName = `${ICON_NAME_PREFIX}${ext}`;
+  const destPath = path.join(RUNTIME_DIR, destName);
+  ensureRuntimeDirs();
+  fs.copyFileSync(sourcePath, destPath);
+
+  const config = loadConfig();
+  config.REMUS_SERVER_ICON = destName;
+  saveConfig(config);
+
+  return {
+    canceled: false,
+    config,
+    iconPath: destName,
+    iconFile: destPath
+  };
+}
+
 function ensureEnvExists() {
   ensureRuntimeDirs();
   if (!fs.existsSync(ENV_PATH)) {
@@ -819,24 +847,11 @@ ipcMain.handle("manager:icon-select", async () => {
     };
   }
 
-  const source = result.filePaths[0];
-  const ext = path.extname(source).toLowerCase() || ".png";
-  const destName = `${ICON_NAME_PREFIX}${ext}`;
-  const destPath = path.join(RUNTIME_DIR, destName);
+  return setIconFromSource(result.filePaths[0]);
+});
 
-  ensureRuntimeDirs();
-  fs.copyFileSync(source, destPath);
-
-  const config = loadConfig();
-  config.REMUS_SERVER_ICON = destName;
-  saveConfig(config);
-
-  return {
-    canceled: false,
-    config,
-    iconPath: destName,
-    iconFile: destPath
-  };
+ipcMain.handle("manager:icon-set-path", (_, sourcePath) => {
+  return setIconFromSource(String(sourcePath || "").trim());
 });
 
 ipcMain.handle("manager:icon-clear", () => {

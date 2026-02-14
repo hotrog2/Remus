@@ -108,6 +108,7 @@ let usersState = [];
 let membersState = [];
 let activeRoleId = null;
 let hasUnsavedChanges = false;
+let usersSearchNoMatchRow = null;
 
 // Track form changes for unsaved warning
 function markFormDirty() {
@@ -502,6 +503,7 @@ function buildRoleBadges(roleIds = []) {
 
 function renderUsers(users) {
   usersBody.innerHTML = "";
+  usersSearchNoMatchRow = null;
   const list = Array.isArray(users) ? users : [];
   usersCount.textContent = String(list.length);
 
@@ -1267,13 +1269,14 @@ function renderPortCheckDetails(result) {
 
   portCheckDetails.innerHTML = "";
   portCheckDetails.style.display = "grid";
+  const firewallOk = !!(result.rules?.tcpServer && result.rules?.udpMedia && result.rules?.tcpMedia);
 
   // Firewall status
   const firewallDiv = document.createElement("div");
-  firewallDiv.className = `port-check-item ${result.firewall ? "success" : "error"}`;
+  firewallDiv.className = `port-check-item ${firewallOk ? "success" : "error"}`;
   firewallDiv.innerHTML = `
     <div class="check-label">Windows Firewall</div>
-    <div class="check-value">${result.firewall ? "✓ Rules configured" : "✗ Not configured"}</div>
+    <div class="check-value">${firewallOk ? "✓ Rules configured" : "✗ Not configured"}</div>
   `;
   portCheckDetails.appendChild(firewallDiv);
 
@@ -1430,7 +1433,14 @@ iconClearBtn.addEventListener("click", async () => {
 });
 
 for (const btn of tabButtons) {
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", (event) => {
+    if (hasUnsavedChanges && btn.dataset.tab !== "config") {
+      const ok = confirm("You have unsaved changes in the Configuration tab. Switch tabs anyway?");
+      if (!ok) {
+        event.preventDefault();
+        return;
+      }
+    }
     activateTab(btn.dataset.tab);
   });
 }
@@ -1478,8 +1488,22 @@ if (iconDropZone) {
       return;
     }
 
-    // For now, show info that drag-drop needs backend support
-    showNotification("Drag & drop requires file upload support. Please use 'Choose Icon' button for now.", "warning");
+    const sourcePath = file.path || "";
+    if (!sourcePath) {
+      showNotification("Unable to read dropped file path. Use 'Choose Icon' instead.", "error");
+      return;
+    }
+
+    try {
+      const info = await window.remusManager.setIconFromPath(sourcePath);
+      const config = info?.config || {};
+      setFormValues(config);
+      setIconPreview(info?.iconFile, info?.iconPath);
+      markFormDirty();
+      showNotification("Icon updated from dropped file.", "success");
+    } catch (error) {
+      showNotification(error?.message || "Failed to set icon from dropped file.", "error");
+    }
   });
 }
 
@@ -1488,17 +1512,24 @@ if (iconDropZone) {
 if (usersSearch) {
   usersSearch.addEventListener("input", () => {
     const query = usersSearch.value.toLowerCase().trim();
-    const rows = usersBody.querySelectorAll("tr");
+    const rows = Array.from(usersBody.querySelectorAll("tr")).filter((row) => !row.querySelector(".empty"));
     let visibleCount = 0;
-    rows.forEach(row => {
-      if (row.classList.contains("empty")) return;
+    rows.forEach((row) => {
       const text = row.textContent.toLowerCase();
       const matches = !query || text.includes(query);
       row.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
-    if (visibleCount === 0 && rows.length > 0) {
-      usersBody.innerHTML = '<tr><td class="empty" colspan="7">No matching users found.</td></tr>';
+
+    if (usersSearchNoMatchRow) {
+      usersSearchNoMatchRow.remove();
+      usersSearchNoMatchRow = null;
+    }
+
+    if (query && visibleCount === 0 && rows.length > 0) {
+      usersSearchNoMatchRow = document.createElement("tr");
+      usersSearchNoMatchRow.innerHTML = '<td class="empty" colspan="7">No matching users found.</td>';
+      usersBody.appendChild(usersSearchNoMatchRow);
     }
   });
 }
@@ -1507,8 +1538,8 @@ if (bansSearch) {
   bansSearch.addEventListener("input", () => {
     const query = bansSearch.value.toLowerCase().trim();
     const rows = bansBody.querySelectorAll("tr");
-    rows.forEach(row => {
-      if (row.classList.contains("empty")) return;
+    rows.forEach((row) => {
+      if (row.querySelector(".empty")) return;
       const text = row.textContent.toLowerCase();
       row.style.display = !query || text.includes(query) ? "" : "none";
     });
@@ -1519,8 +1550,8 @@ if (messagesSearch) {
   messagesSearch.addEventListener("input", () => {
     const query = messagesSearch.value.toLowerCase().trim();
     const rows = messagesBody.querySelectorAll("tr");
-    rows.forEach(row => {
-      if (row.classList.contains("empty")) return;
+    rows.forEach((row) => {
+      if (row.querySelector(".empty")) return;
       const text = row.textContent.toLowerCase();
       row.style.display = !query || text.includes(query) ? "" : "none";
     });
@@ -1531,8 +1562,8 @@ if (uploadsSearch) {
   uploadsSearch.addEventListener("input", () => {
     const query = uploadsSearch.value.toLowerCase().trim();
     const rows = uploadsBody.querySelectorAll("tr");
-    rows.forEach(row => {
-      if (row.classList.contains("empty")) return;
+    rows.forEach((row) => {
+      if (row.querySelector(".empty")) return;
       const text = row.textContent.toLowerCase();
       row.style.display = !query || text.includes(query) ? "" : "none";
     });
@@ -1543,8 +1574,8 @@ if (auditSearch) {
   auditSearch.addEventListener("input", () => {
     const query = auditSearch.value.toLowerCase().trim();
     const rows = auditBody.querySelectorAll("tr");
-    rows.forEach(row => {
-      if (row.classList.contains("empty")) return;
+    rows.forEach((row) => {
+      if (row.querySelector(".empty")) return;
       const text = row.textContent.toLowerCase();
       row.style.display = !query || text.includes(query) ? "" : "none";
     });
@@ -1579,18 +1610,5 @@ window.addEventListener("beforeunload", (event) => {
     return "";
   }
 });
-
-// Warn before switching tabs with unsaved changes
-for (const btn of tabButtons) {
-  btn.addEventListener("click", (event) => {
-    if (hasUnsavedChanges && btn.dataset.tab !== "config") {
-      const ok = confirm("You have unsaved changes in the Configuration tab. Switch tabs anyway?");
-      if (!ok) {
-        event.stopImmediatePropagation();
-        return;
-      }
-    }
-  });
-}
 
 void init();

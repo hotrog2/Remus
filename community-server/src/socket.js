@@ -44,6 +44,32 @@ function respondAck(ack, payload) {
   }
 }
 
+function normalizeMessageAttachments(store, channelId, authorId, rawAttachments) {
+  const items = Array.isArray(rawAttachments) ? rawAttachments : [];
+  const attachments = [];
+  const seen = new Set();
+
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    const uploadId = String(item.id || "").trim();
+    const uploadUrl = String(item.url || "").trim();
+    const upload = uploadId ? store.getUploadById(uploadId) : uploadUrl ? store.getUploadByUrl(uploadUrl) : null;
+    if (!upload) continue;
+    if (upload.channelId !== channelId || upload.authorId !== authorId) continue;
+    if (seen.has(upload.id)) continue;
+    seen.add(upload.id);
+    attachments.push({
+      id: upload.id,
+      name: upload.name,
+      size: upload.size,
+      mimeType: upload.mimeType,
+      url: upload.url
+    });
+  }
+
+  return attachments;
+}
+
 export function configureSocket(io, store, sfu) {
   const voiceParticipants = new Map();
   const userVoiceChannel = new Map();
@@ -393,9 +419,7 @@ export function configureSocket(io, store, sfu) {
       if ((perms & PERMISSIONS.SEND_MESSAGES) !== PERMISSIONS.SEND_MESSAGES) return;
 
       const content = sanitizeText(payload.content || "");
-      const attachments = Array.isArray(payload.attachments)
-        ? payload.attachments.filter((item) => item && typeof item.url === "string")
-        : [];
+      const attachments = normalizeMessageAttachments(store, channelId, userId, payload.attachments);
       const replyToId = typeof payload.replyToId === "string" ? payload.replyToId.trim() : "";
       if (replyToId) {
         const reply = store.getMessageById(replyToId);

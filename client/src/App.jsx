@@ -443,6 +443,17 @@ function resolveAssetUrl(path) {
   }
 }
 
+function withTokenQuery(url, token) {
+  if (!url || !token) return url;
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("token", token);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 function BrandLogo({ className = "", alt = "Remus logo" }) {
   const [failed, setFailed] = useState(false);
 
@@ -5658,16 +5669,21 @@ export default function App() {
                       {message.attachments.map((file) => {
                         const fileName = file.name || "";
                         const isImage = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(fileName);
+                        const absoluteAttachmentUrl = toAbsoluteUrl(file.url, communityBase);
+                        const secureAttachmentUrl = withTokenQuery(absoluteAttachmentUrl, token);
 
                         if (isImage) {
                           return (
                             <li key={file.id || file.url}>
                               <img
-                                src={toAbsoluteUrl(file.url, communityBase)}
+                                src={secureAttachmentUrl}
                                 alt={fileName}
                                 className="message-image"
-                                onClick={() => window.open(toAbsoluteUrl(file.url, communityBase), "_blank")}
+                                draggable={false}
                               />
+                              <button type="button" className="file-download image-download" onClick={() => void downloadAttachment(file)}>
+                                Download {fileName || "image"}
+                              </button>
                             </li>
                           );
                         }

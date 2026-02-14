@@ -978,6 +978,38 @@ export class Store {
       }));
   }
 
+  getUploadById(uploadId) {
+    if (!uploadId) return null;
+    const row = this.db.prepare("SELECT * FROM uploads WHERE id = ?").get(uploadId);
+    if (!row) return null;
+    return {
+      id: row.id,
+      channelId: row.channel_id,
+      authorId: row.author_id,
+      name: row.name,
+      size: row.size,
+      mimeType: row.mime_type,
+      url: row.url,
+      createdAt: row.created_at
+    };
+  }
+
+  getUploadByUrl(url) {
+    if (!url) return null;
+    const row = this.db.prepare("SELECT * FROM uploads WHERE url = ?").get(url);
+    if (!row) return null;
+    return {
+      id: row.id,
+      channelId: row.channel_id,
+      authorId: row.author_id,
+      name: row.name,
+      size: row.size,
+      mimeType: row.mime_type,
+      url: row.url,
+      createdAt: row.created_at
+    };
+  }
+
   createUpload({ id, channelId, authorId, name, size, mimeType, url }) {
     const uploadId = id || uuid();
     this.db

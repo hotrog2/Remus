@@ -18,6 +18,9 @@
   --accent-soft: #7289da;
   --ok: #43b581;
   --danger: #da373c;
+  --text: var(--text-primary);
+  --text-normal: var(--text-primary);
+  --primary: var(--accent);
 }
 
 * {
@@ -1017,14 +1020,9 @@ button.user-settings {
   max-width: 400px;
   max-height: 300px;
   border-radius: 4px;
-  cursor: pointer;
   display: block;
   margin-top: 4px;
-  transition: opacity 0.2s;
-}
-
-.message-image:hover {
-  opacity: 0.9;
+  user-select: none;
 }
 
 .typing {
