@@ -4492,7 +4492,7 @@ export default function App() {
     }
 
     try {
-      const response = await apiCommunity(communityBase, `/api/messages/${messageId}`, {
+      const response = await apiCommunity(communityBase, `/api/channels/${selectedChannelIdRef.current}/messages/${messageId}`, {
         token,
         method: "PATCH",
         body: { content: newContent }
@@ -5564,18 +5564,12 @@ export default function App() {
               <p>No messages yet. Start the conversation!</p>
             </div>
           ) : null}
-          {!messagesLoading && filteredMessages.map((message, index) => {
-            const previousMessage = index > 0 ? filteredMessages[index - 1] : null;
-            const isSameAuthor = previousMessage && previousMessage.author?.id === message.author?.id;
-            const timeDiff = previousMessage ? new Date(message.createdAt).getTime() - new Date(previousMessage.createdAt).getTime() : Infinity;
-            const isGrouped = isSameAuthor && timeDiff < 5 * 60 * 1000; // 5 minutes
-
+          {!messagesLoading && filteredMessages.map((message) => {
             return (
-              <article key={message.id} className={isGrouped ? "message-row grouped" : "message-row"}>
-                {!isGrouped && <div className="avatar message-avatar">{initials(message.author?.username || "Unknown")}</div>}
+              <article key={message.id} className="message-row">
+                <div className="avatar message-avatar">{initials(message.author?.username || "Unknown")}</div>
                 <div className="message-content">
-                  {!isGrouped && (
-                    <div className="message-head">
+                  <div className="message-head">
                       <strong>{message.author?.nickname || message.author?.username || "Unknown"}</strong>
                       <time>{formatTimestamp(message.createdAt)}</time>
                       {message.content && (
@@ -5620,9 +5614,7 @@ export default function App() {
                           🗑️
                         </button>
                       )}
-                    </div>
-                  )}
-                  {isGrouped && <time className="grouped-timestamp">{formatTimestamp(message.createdAt)}</time>}
+                  </div>
 
                   {/* Reply indicator */}
                   {message.replyTo && (

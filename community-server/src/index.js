@@ -1029,6 +1029,42 @@ app.delete("/api/channels/:channelId/messages/:messageId", authMiddleware, requi
   return res.json({ ok: true });
 });
 
+app.patch("/api/channels/:channelId/messages/:messageId", authMiddleware, requireNotBanned, (req, res) => {
+  const channelId = req.params.channelId;
+  const messageId = req.params.messageId;
+  const channel = store.getChannelById(channelId);
+  if (!channel || channel.type !== "text") {
+    return res.status(400).json({ error: "Messages are only available for text channels" });
+  }
+  req.params.guildId = channel.guildId;
+
+  const message = store.getMessageById(messageId);
+  if (!message || message.channelId !== channelId) {
+    return res.status(404).json({ error: "Message not found" });
+  }
+
+  const perms = store.getPermissions(channel.guildId, req.auth.user.id, channelId);
+  const canManage = (perms & PERMISSIONS.MANAGE_MESSAGES) === PERMISSIONS.MANAGE_MESSAGES;
+  if (!canManage && message.authorId !== req.auth.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const content = (req.body.content || "").toString().trim().slice(0, 2000);
+  if (!content) {
+    return res.status(400).json({ error: "Message cannot be empty" });
+  }
+
+  const updated = store.updateMessageContent(messageId, content);
+  if (!updated) {
+    return res.status(400).json({ error: "Unable to update message" });
+  }
+
+  const view = store.toMessageView(updated);
+  io.to(`channel:${channelId}`).emit("message:update", { message: view });
+  store.addAudit({ guildId: channel.guildId, action: "message.edit", actorId: req.auth.user.id, targetId: messageId });
+  return res.json({ message: view });
+});
+
 app.post("/api/files/upload", authMiddleware, requireNotBanned, upload.single("file"), (req, res) => {
   const channelId = req.body.channelId;
   const channel = channelId ? store.getChannelById(channelId) : null;

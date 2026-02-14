@@ -883,7 +883,7 @@ button.user-settings {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 6px 14px 6px;
+  padding: 4px 12px 6px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -919,7 +919,7 @@ button.user-settings {
 
 .message-row {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 24px 1fr;
   gap: 6px;
   padding: 0;
   margin: 0;
@@ -930,8 +930,8 @@ button.user-settings {
 }
 
 .message-avatar {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
 }
 
 .message-content {
@@ -941,16 +941,16 @@ button.user-settings {
 .message-head {
   display: flex;
   align-items: baseline;
-  gap: 5px;
-  line-height: 1.1;
+  gap: 4px;
+  line-height: 1.0;
 }
 
 .message-head strong {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .message-head time {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--text-dim);
 }
 
@@ -978,7 +978,7 @@ button.user-settings {
 .message-content p {
   margin: 0;
   white-space: pre-wrap;
-  line-height: 1.15;
+  line-height: 1.1;
   color: var(--text-primary);
 }
 
@@ -1994,26 +1994,7 @@ button.loading::after {
 }
 
 /* Grouped message styles */
-.message-row.grouped {
-  padding-left: 2.2rem;
-  margin-top: 0;
-}
-
-.message-row.grouped .message-content {
-  padding-top: 0;
-}
-
-.message-row.grouped:hover .grouped-timestamp {
-  opacity: 1;
-}
-
-.grouped-timestamp {
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  opacity: 0;
-  transition: opacity 0.2s;
-  margin-right: 0.5rem;
-}
+/* Grouped message styles are intentionally unused (always show author). */
 
 /* Jump to bottom button */
 .jump-to-bottom {

@@ -1052,6 +1052,24 @@ export class Store {
     };
   }
 
+  updateMessageContent(messageId, content) {
+    if (!messageId) return null;
+    const trimmed = (content || "").toString().trim().slice(0, 2000);
+    if (!trimmed) return null;
+    const row = this.db.prepare("SELECT * FROM messages WHERE id = ?").get(messageId);
+    if (!row) return null;
+    this.db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(trimmed, messageId);
+    return {
+      id: row.id,
+      channelId: row.channel_id,
+      authorId: row.author_id,
+      content: trimmed,
+      attachments: decodeJson(row.attachments, []),
+      replyToId: row.reply_to_id || null,
+      createdAt: row.created_at
+    };
+  }
+
   deleteMessage(messageId) {
     if (!messageId) return null;
     const row = this.db.prepare("SELECT * FROM messages WHERE id = ?").get(messageId);
