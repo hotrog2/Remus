@@ -218,6 +218,7 @@ export class Store {
         author_id TEXT,
         content TEXT,
         attachments TEXT,
+        reply_to_id TEXT,
         created_at TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel_id, created_at DESC);
@@ -256,6 +257,11 @@ export class Store {
 
     if (!this.getMeta("settings")) {
       this.setMeta("settings", encodeJson(DEFAULT_SETTINGS));
+    }
+
+    const messageColumns = this.db.prepare("PRAGMA table_info(messages)").all().map((row) => row.name);
+    if (!messageColumns.includes("reply_to_id")) {
+      this.db.prepare("ALTER TABLE messages ADD COLUMN reply_to_id TEXT").run();
     }
   }
 
@@ -311,7 +317,7 @@ export class Store {
       "INSERT OR IGNORE INTO channels (id, guild_id, name, type, category_id, position, created_by, created_at, permission_overrides) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     const insertMessage = this.db.prepare(
-      "INSERT OR IGNORE INTO messages (id, channel_id, author_id, content, attachments, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT OR IGNORE INTO messages (id, channel_id, author_id, content, attachments, reply_to_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
     );
     const insertUpload = this.db.prepare(
       "INSERT OR IGNORE INTO uploads (id, channel_id, author_id, name, size, mime_type, url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
@@ -390,6 +396,7 @@ export class Store {
           message.authorId || "",
           message.content || "",
           encodeJson(message.attachments || []),
+          message.replyToId || null,
           message.createdAt || nowIso()
         );
       }
@@ -1006,32 +1013,50 @@ export class Store {
       }));
   }
 
-  createMessage({ channelId, authorId, content, attachments }) {
+  createMessage({ channelId, authorId, content, attachments, replyToId }) {
     const message = {
       id: uuid(),
       channelId,
       authorId,
       content: content || "",
       attachments: Array.isArray(attachments) ? attachments : [],
+      replyToId: replyToId || null,
       createdAt: nowIso()
     };
     this.db
-      .prepare("INSERT INTO messages (id, channel_id, author_id, content, attachments, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .prepare("INSERT INTO messages (id, channel_id, author_id, content, attachments, reply_to_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
       .run(
         message.id,
         message.channelId,
         message.authorId,
         message.content,
         encodeJson(message.attachments),
+        message.replyToId,
         message.createdAt
       );
     return message;
+  }
+
+  getMessageById(messageId) {
+    if (!messageId) return null;
+    const row = this.db.prepare("SELECT * FROM messages WHERE id = ?").get(messageId);
+    if (!row) return null;
+    return {
+      id: row.id,
+      channelId: row.channel_id,
+      authorId: row.author_id,
+      content: row.content,
+      attachments: decodeJson(row.attachments, []),
+      replyToId: row.reply_to_id || null,
+      createdAt: row.created_at
+    };
   }
 
   deleteMessage(messageId) {
     if (!messageId) return null;
     const row = this.db.prepare("SELECT * FROM messages WHERE id = ?").get(messageId);
     if (!row) return null;
+    this.db.prepare("UPDATE messages SET reply_to_id = NULL WHERE reply_to_id = ?").run(messageId);
     this.db.prepare("DELETE FROM messages WHERE id = ?").run(messageId);
     const attachments = decodeJson(row.attachments, []);
     if (Array.isArray(attachments)) {
@@ -1051,6 +1076,7 @@ export class Store {
       authorId: row.author_id,
       content: row.content,
       attachments,
+      replyToId: row.reply_to_id || null,
       createdAt: row.created_at
     };
   }
@@ -1066,6 +1092,7 @@ export class Store {
       authorId: row.author_id,
       content: row.content,
       attachments: decodeJson(row.attachments, []),
+      replyToId: row.reply_to_id || null,
       createdAt: row.created_at
     }));
     return mapped.reverse();
@@ -1081,17 +1108,26 @@ export class Store {
         authorId: row.author_id,
         content: row.content,
         attachments: decodeJson(row.attachments, []),
+        replyToId: row.reply_to_id || null,
         createdAt: row.created_at
       }));
   }
 
   toMessageView(message) {
     if (!message) return null;
+    const reply = message.replyToId ? this.getMessageById(message.replyToId) : null;
     return {
       id: message.id,
       channelId: message.channelId,
       content: message.content,
       attachments: message.attachments || [],
+      replyTo: reply
+        ? {
+            id: reply.id,
+            content: reply.content,
+            author: this.publicUser(reply.authorId)
+          }
+        : null,
       createdAt: message.createdAt,
       author: this.publicUser(message.authorId)
     };

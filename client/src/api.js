@@ -1,4 +1,4 @@
-const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE || import.meta.env.VITE_API_BASE || "http://localhost:3001").replace(/\/$/, "");
+const AUTH_BASE = (import.meta.env.VITE_AUTH_BASE || import.meta.env.VITE_API_BASE || "http://api-remus.com:3001").replace(/\/$/, "");
 const DEFAULT_COMMUNITY_BASE = (import.meta.env.VITE_DEFAULT_COMMUNITY_BASE || "").replace(/\/$/, "");
 let runtimeAuthBase = "";
 

@@ -396,6 +396,11 @@ export function configureSocket(io, store, sfu) {
       const attachments = Array.isArray(payload.attachments)
         ? payload.attachments.filter((item) => item && typeof item.url === "string")
         : [];
+      const replyToId = typeof payload.replyToId === "string" ? payload.replyToId.trim() : "";
+      if (replyToId) {
+        const reply = store.getMessageById(replyToId);
+        if (!reply || reply.channelId !== channelId) return;
+      }
 
       if (!content && attachments.length === 0) return;
 
@@ -403,7 +408,8 @@ export function configureSocket(io, store, sfu) {
         channelId,
         authorId: userId,
         content,
-        attachments
+        attachments,
+        replyToId: replyToId || null
       });
 
       const view = store.toMessageView(message);

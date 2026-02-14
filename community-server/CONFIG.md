@@ -8,7 +8,7 @@ This document describes all environment variables used by the Remus community se
 - **Type**: URL
 - **Default**: `http://localhost:3001`
 - **Description**: URL of the central Remus backend for authentication
-- **Example**: `REMUS_MAIN_BACKEND_URL=http://192.168.1.100:3001`
+- **Example**: `REMUS_MAIN_BACKEND_URL=http://api-remus.com:3001`
 
 ## Server Configuration
 
@@ -49,14 +49,14 @@ This document describes all environment variables used by the Remus community se
 - **Type**: Comma-separated list of URLs
 - **Default**: `http://localhost:5173`
 - **Description**: Allowed origins for CORS requests
-- **Security**: Only list trusted client origins. Local `http://127.0.0.1:*` / `http://localhost:*` are accepted by default for the packaged client.
+- **Security**: Only list trusted client origins. Local `http://localhost:*` is accepted by default for the packaged client.
 - **Example**: `REMUS_CLIENT_ORIGIN=http://localhost:5173,https://app.example.com`
 
 ### `REMUS_ALLOW_FILE_ORIGIN`
 - **Type**: Boolean (`1` or `0`)
 - **Default**: `0`
 - **Description**: Allow `file://` origin for legacy desktop builds
-- **Security**: Not recommended. Prefer the default packaged client (uses local `http://127.0.0.1`).
+- **Security**: Not recommended. Prefer the default packaged client (uses local `http://localhost`).
 - **Example**: `REMUS_ALLOW_FILE_ORIGIN=1`
 
 ### `REMUS_ALLOW_NULL_ORIGIN`
@@ -85,10 +85,10 @@ This document describes all environment variables used by the Remus community se
 
 ### `REMUS_MEDIA_LISTEN_IP`
 - **Type**: IP address
-- **Default**: `0.0.0.0`
+- **Default**: (listen on all interfaces)
 - **Description**: IP address for mediasoup to listen on
-- **Usage**: Usually `0.0.0.0` to listen on all interfaces
-- **Example**: `REMUS_MEDIA_LISTEN_IP=0.0.0.0`
+- **Usage**: Leave empty to listen on all interfaces
+- **Example**: `REMUS_MEDIA_LISTEN_IP=<LISTEN_IP>`
 
 ### `REMUS_MEDIA_ANNOUNCED_IP`
 - **Type**: IP address
@@ -96,7 +96,7 @@ This document describes all environment variables used by the Remus community se
 - **Description**: Public IP address announced to WebRTC clients
 - **Usage**: Required for voice/video to work across networks
 - **Important**: Set this to your server's public IP if behind NAT
-- **Example**: `REMUS_MEDIA_ANNOUNCED_IP=203.0.113.1`
+- **Example**: `REMUS_MEDIA_ANNOUNCED_IP=<PUBLIC_IP>`
 
 ### `REMUS_MEDIA_MIN_PORT`
 - **Type**: Number (1-65535)
@@ -182,7 +182,7 @@ REMUS_FILE_LIMIT_MB=50
 REMUS_UPLOADS_DIR=/var/lib/remus/uploads
 
 # WebRTC - IMPORTANT: Set public IP!
-REMUS_MEDIA_ANNOUNCED_IP=203.0.113.1
+REMUS_MEDIA_ANNOUNCED_IP=<PUBLIC_IP>
 REMUS_MEDIA_MIN_PORT=40000
 REMUS_MEDIA_MAX_PORT=49999
 
@@ -216,7 +216,7 @@ REMUS_CLIENT_ORIGIN=http://localhost:5173
 REMUS_FILE_LIMIT_MB=100
 
 # WebRTC - local testing
-REMUS_MEDIA_ANNOUNCED_IP=127.0.0.1
+REMUS_MEDIA_ANNOUNCED_IP=localhost
 REMUS_MEDIA_MIN_PORT=40000
 REMUS_MEDIA_MAX_PORT=49999
 

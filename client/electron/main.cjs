@@ -1,9 +1,10 @@
-const { app, BrowserWindow, shell, ipcMain, desktopCapturer } = require("electron");
+const { app, BrowserWindow, shell, ipcMain, desktopCapturer, dialog } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
 
 const DEV_URL = process.env.REMUS_CLIENT_DEV_URL || "http://localhost:5173";
+const LOCAL_SERVER_PORT = Number(process.env.REMUS_CLIENT_PORT || 1215);
 let staticServer = null;
 let staticServerPort = null;
 
@@ -87,7 +88,7 @@ function startStaticServer() {
       reject(error);
     });
 
-    staticServer.listen(0, "127.0.0.1", () => {
+    staticServer.listen(LOCAL_SERVER_PORT, "127.0.0.1", () => {
       const addr = staticServer.address();
       staticServerPort = typeof addr === "object" && addr ? addr.port : null;
       resolve(staticServerPort);
@@ -132,7 +133,13 @@ function createWindow() {
         }
         mainWindow.loadURL(`http://127.0.0.1:${port}/`);
       })
-      .catch(() => {
+      .catch((error) => {
+        if (error?.code === "EADDRINUSE") {
+          dialog.showErrorBox(
+            "Remus Client",
+            `Local port ${LOCAL_SERVER_PORT} is already in use. Close other Remus clients or set REMUS_CLIENT_PORT to a free port.`
+          );
+        }
         mainWindow.loadURL("data:text/plain;charset=UTF-8,Remus desktop build failed to start local server.");
       });
     return;

@@ -976,6 +976,13 @@ app.post("/api/channels/:channelId/messages", authMiddleware, requireNotBanned, 
   const attachments = Array.isArray(req.body.attachments)
     ? req.body.attachments.filter((item) => item && typeof item.url === "string")
     : [];
+  const replyToId = String(req.body.replyToId || "").trim();
+  if (replyToId) {
+    const reply = store.getMessageById(replyToId);
+    if (!reply || reply.channelId !== channelId) {
+      return res.status(400).json({ error: "Reply target is invalid." });
+    }
+  }
 
   if (!content && attachments.length === 0) {
     return res.status(400).json({ error: "Message cannot be empty" });
@@ -985,7 +992,8 @@ app.post("/api/channels/:channelId/messages", authMiddleware, requireNotBanned, 
     channelId,
     authorId: req.auth.user.id,
     content,
-    attachments
+    attachments,
+    replyToId: replyToId || null
   });
 
   const view = store.toMessageView(message);
@@ -1001,8 +1009,13 @@ app.delete("/api/channels/:channelId/messages/:messageId", authMiddleware, requi
     return res.status(400).json({ error: "Messages are only available for text channels" });
   }
   req.params.guildId = channel.guildId;
-  const permError = requirePermission(req, res, PERMISSIONS.MANAGE_MESSAGES, channelId);
-  if (permError) {
+  const message = store.getMessageById(messageId);
+  if (!message || message.channelId !== channelId) {
+    return res.status(404).json({ error: "Message not found" });
+  }
+  const perms = store.getPermissions(channel.guildId, req.auth.user.id, channelId);
+  const canManage = (perms & PERMISSIONS.MANAGE_MESSAGES) === PERMISSIONS.MANAGE_MESSAGES;
+  if (!canManage && message.authorId !== req.auth.user.id) {
     return res.status(403).json({ error: "Forbidden" });
   }
   const removed = store.deleteMessage(messageId);

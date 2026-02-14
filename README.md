@@ -101,7 +101,7 @@ Full details are in `community-server/CONFIG.md`. Highlights:
 - `REMUS_MAIN_BACKEND_URL` – central backend URL (required)
 - `PORT`, `REMUS_SERVER_NAME`, `REMUS_PUBLIC_URL`, `REMUS_REGION`
 - `REMUS_CLIENT_ORIGIN` – comma-separated allowed client origins  
-  Local `http://127.0.0.1:*` / `http://localhost:*` are accepted by default for the packaged client.
+  Local `http://localhost:*` is accepted by default for the packaged client.
 - `REMUS_ALLOW_FILE_ORIGIN` / `REMUS_ALLOW_NULL_ORIGIN` – **off by default**; not recommended
 - `REMUS_FILE_LIMIT_MB`, `REMUS_UPLOADS_DIR`
 - `REMUS_MEDIA_ANNOUNCED_IP`, `REMUS_MEDIA_MIN_PORT`, `REMUS_MEDIA_MAX_PORT`, `REMUS_ICE_SERVERS`

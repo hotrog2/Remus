@@ -32,6 +32,7 @@ body,
   background: var(--bg-app);
   color: var(--text-primary);
   font-family: "Barlow", sans-serif;
+  overflow: hidden;
 }
 
 button,
@@ -67,6 +68,7 @@ a:focus-visible {
   height: 100%;
   display: grid;
   grid-template-columns: 72px 250px minmax(420px, 1fr) 240px;
+  overflow: hidden;
 }
 
 .guild-sidebar {
@@ -767,6 +769,8 @@ button.user-settings {
   flex-direction: column;
   min-width: 0;
   position: relative;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .drag-overlay {
@@ -878,11 +882,11 @@ button.user-settings {
 .message-list {
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  padding: 18px 16px 8px;
+  overflow-y: auto;
+  padding: 6px 14px 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
 .loading-messages,
@@ -915,9 +919,10 @@ button.user-settings {
 
 .message-row {
   display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-  padding: 3px 0 8px;
+  grid-template-columns: 28px 1fr;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
 }
 
 .message-row:hover {
@@ -925,8 +930,8 @@ button.user-settings {
 }
 
 .message-avatar {
-  width: 40px;
-  height: 40px;
+  width: 26px;
+  height: 26px;
 }
 
 .message-content {
@@ -936,15 +941,16 @@ button.user-settings {
 .message-head {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 5px;
+  line-height: 1.1;
 }
 
 .message-head strong {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .message-head time {
-  font-size: 0.74rem;
+  font-size: 0.65rem;
   color: var(--text-dim);
 }
 
@@ -970,9 +976,9 @@ button.user-settings {
 }
 
 .message-content p {
-  margin: 2px 0 0;
+  margin: 0;
   white-space: pre-wrap;
-  line-height: 1.38;
+  line-height: 1.15;
   color: var(--text-primary);
 }
 
@@ -1989,12 +1995,12 @@ button.loading::after {
 
 /* Grouped message styles */
 .message-row.grouped {
-  padding-left: 3.5rem;
-  margin-top: 0.25rem;
+  padding-left: 2.2rem;
+  margin-top: 0;
 }
 
 .message-row.grouped .message-content {
-  padding-top: 0.25rem;
+  padding-top: 0;
 }
 
 .message-row.grouped:hover .grouped-timestamp {
@@ -2158,7 +2164,13 @@ button.loading::after {
 
 .message-actions {
   position: relative;
-  margin-top: 4px;
+  margin-top: 2px;
+  display: none;
+}
+
+.message-row:hover .message-actions,
+.message-actions:focus-within {
+  display: block;
 }
 
 .add-reaction-btn {

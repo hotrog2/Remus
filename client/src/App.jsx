@@ -618,10 +618,13 @@ function AuthView({ mode, setMode, form, setForm, onSubmit, onRecover, error }) 
 
 export default function App() {
   const configuredAuthBase = getConfiguredAuthBase();
-  const [resolvedAuthBase, setResolvedAuthBase] = useState(() => safeStorageGet("remus_auth_base") || "");
+  const [resolvedAuthBase, setResolvedAuthBase] = useState(() => sanitizeCommunityBase(getConfiguredAuthBase() || ""));
   const authBase = getAuthBase();
   const [backendStatus, setBackendStatus] = useState("checking");
   const [backendError, setBackendError] = useState("");
+  const [backendSettingsOpen, setBackendSettingsOpen] = useState(false);
+  const [backendSettingsValue, setBackendSettingsValue] = useState(() => sanitizeCommunityBase(getConfiguredAuthBase() || ""));
+  const [backendSettingsError, setBackendSettingsError] = useState("");
   const [token, setToken] = useState(() => safeStorageGet("remus_token") || "");
   const [joinedServers, setJoinedServers] = useState(() => loadJoinedServers());
   const [selectedServerId, setSelectedServerId] = useState(() => getInitialSelectedServerId(loadJoinedServers()));
@@ -1031,15 +1034,14 @@ export default function App() {
 
   const checkBackend = useCallback(async () => {
     const candidates = [];
-    const storedBase = sanitizeCommunityBase(safeStorageGet("remus_auth_base") || "");
-    if (storedBase) candidates.push(storedBase);
-
     const normalizedConfigured = sanitizeCommunityBase(configuredAuthBase || "");
     if (normalizedConfigured) candidates.push(normalizedConfigured);
 
+    const storedBase = sanitizeCommunityBase(safeStorageGet("remus_auth_base") || "");
+    if (storedBase) candidates.push(storedBase);
+
     const fallbackBases = [
-      "http://localhost:3001",
-      "http://127.0.0.1:3001"
+      "http://api-remus.com:3001"
     ];
     for (const base of fallbackBases) {
       candidates.push(base);
@@ -1057,7 +1059,7 @@ export default function App() {
     setBackendError("");
 
     let lastError = null;
-    const isLocalBase = (base) => base.includes("localhost") || base.includes("127.0.0.1");
+    const isLocalBase = (base) => base.includes("localhost");
 
     for (const base of uniqueCandidates) {
       const controller = new AbortController();
@@ -1096,6 +1098,30 @@ export default function App() {
       setBackendError(message || "Unable to reach backend.");
     }
   }, [configuredAuthBase]);
+
+  const openBackendSettings = useCallback(() => {
+    const current = sanitizeCommunityBase(resolvedAuthBase || configuredAuthBase || authBase || "");
+    setBackendSettingsValue(current);
+    setBackendSettingsError("");
+    setBackendSettingsOpen(true);
+  }, [authBase, configuredAuthBase, resolvedAuthBase]);
+
+  const closeBackendSettings = useCallback(() => {
+    setBackendSettingsOpen(false);
+  }, []);
+
+  const saveBackendSettings = useCallback(() => {
+    const normalized = sanitizeCommunityBase(backendSettingsValue);
+    if (!normalized) {
+      setBackendSettingsError("Enter a backend URL.");
+      return;
+    }
+    setAuthBase(normalized);
+    safeStorageSet("remus_auth_base", normalized);
+    setResolvedAuthBase(normalized);
+    setBackendSettingsOpen(false);
+    void checkBackend();
+  }, [backendSettingsValue, checkBackend]);
 
   const refreshAudioDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
@@ -4425,7 +4451,7 @@ export default function App() {
         danger: true,
         onConfirm: async () => {
           try {
-            await apiCommunity(communityBase, `/api/messages/${message.id}`, {
+            await apiCommunity(communityBase, `/api/channels/${message.channelId}/messages/${message.id}`, {
               token,
               method: "DELETE"
             });
@@ -5021,20 +5047,51 @@ export default function App() {
         ? "Connecting to Remus backend..."
         : `Cannot reach backend at ${displayBase || "unknown"}`;
     return (
-        <div className="auth-shell">
-          <div className="auth-card">
-            <h1 className="auth-title">
-              <BrandLogo className="auth-logo" />
-              <span>Remus</span>
+      <div className="auth-shell">
+        <div className="auth-card">
+          <h1 className="auth-title">
+            <BrandLogo className="auth-logo" />
+            <span>Remus</span>
           </h1>
           <p>{message}</p>
           {backendStatus === "offline" ? (
-            <button type="button" onClick={() => void checkBackend()}>
-              Retry
-            </button>
+            <div className="settings-inline">
+              <button type="button" onClick={() => void checkBackend()}>
+                Retry
+              </button>
+              <button type="button" className="secondary-btn" onClick={openBackendSettings}>
+                Change Backend URL
+              </button>
+            </div>
           ) : null}
           {backendError ? <div className="error-box">{backendError}</div> : null}
         </div>
+
+        {backendSettingsOpen ? (
+          <div
+            className="settings-overlay"
+            onClick={(event) => (event.target === event.currentTarget ? closeBackendSettings() : null)}
+          >
+            <div className="add-server-modal">
+              <h2>Backend URL</h2>
+              <p>Enter the URL for your Remus backend.</p>
+              <input
+                value={backendSettingsValue}
+                onChange={(event) => setBackendSettingsValue(event.target.value)}
+                placeholder="http://api-remus.com:3001"
+              />
+              {backendSettingsError ? <div className="error-box">{backendSettingsError}</div> : null}
+              <div className="settings-inline">
+                <button type="button" className="secondary-btn" onClick={closeBackendSettings}>
+                  Cancel
+                </button>
+                <button type="button" onClick={saveBackendSettings}>
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
