@@ -2282,12 +2282,14 @@ export default function App() {
           localAudioStreamRef.current = stream;
           void refreshAudioDevices();
 
+          // Set target channel before join ack so early "voice:existingProducers"
+          // events are not dropped by channel guards.
+          joinedVoiceChannelRef.current = channelId;
           console.log(`[joinVoiceChannel] Sending voice:join request to server...`);
           await socketRequest("voice:join", { channelId });
           joinedOk = true;
           console.log(`[joinVoiceChannel] Successfully joined on server side`);
 
-          joinedVoiceChannelRef.current = channelId;
           setJoinedVoiceChannelId(channelId);
           setVoiceParticipants([]);
           setSpeakingUsers({});
