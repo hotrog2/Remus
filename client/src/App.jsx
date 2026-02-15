@@ -1755,7 +1755,10 @@ export default function App() {
         transport.on("connect", ({ dtlsParameters }, callback, errback) => {
           socketRequest("voice:connectTransport", { channelId, transportId: transport.id, dtlsParameters })
             .then(() => callback())
-            .catch((error) => errback(error));
+            .catch((error) => {
+              setStatusError(error?.message || "Voice transport connection failed.");
+              errback(error);
+            });
         });
 
         transport.on("produce", ({ kind, rtpParameters, appData }, callback, errback) => {
@@ -1771,7 +1774,7 @@ export default function App() {
         });
 
         transport.on("connectionstatechange", (state) => {
-          if (state === "failed" || state === "closed") {
+          if (state === "failed") {
             setStatusError("Voice transport connection failed.");
           }
         });
@@ -1789,11 +1792,14 @@ export default function App() {
         transport.on("connect", ({ dtlsParameters }, callback, errback) => {
           socketRequest("voice:connectTransport", { channelId, transportId: transport.id, dtlsParameters })
             .then(() => callback())
-            .catch((error) => errback(error));
+            .catch((error) => {
+              setStatusError(error?.message || "Voice receive transport connection failed.");
+              errback(error);
+            });
         });
 
         transport.on("connectionstatechange", (state) => {
-          if (state === "failed" || state === "closed") {
+          if (state === "failed") {
             setStatusError("Voice receive transport connection failed.");
           }
         });
@@ -2374,7 +2380,13 @@ export default function App() {
           const next = { ...prev };
           for (const user of users) {
             if (user?.id) {
-              next[user.id] = user.nickname || user.username || next[user.id];
+              const label = user.nickname || user.username || next[user.id];
+              if (label) {
+                next[user.id] = label;
+                if (user.userId) {
+                  next[user.userId] = label;
+                }
+              }
             }
           }
           return next;
@@ -2425,6 +2437,9 @@ export default function App() {
             const label = user.nickname || user.username;
             if (label) {
               next[user.id] = label;
+              if (user.userId) {
+                next[user.userId] = label;
+              }
             }
           }
         }
@@ -3713,6 +3728,9 @@ export default function App() {
               const label = user.nickname || user.username;
               if (label) {
                 next[user.id] = label;
+                if (user.userId) {
+                  next[user.userId] = label;
+                }
               }
             }
           }
@@ -4863,13 +4881,22 @@ export default function App() {
       if (sessionId && voiceUsernames[sessionId]) {
         return voiceUsernames[sessionId];
       }
+      if (userId && voiceUsernames[userId]) {
+        return voiceUsernames[userId];
+      }
+      if (sessionId && sessionId === socketIdRef.current) {
+        return currentMember?.nickname || user?.username || "You";
+      }
       if (userId && usernameById.get(userId)) {
         return usernameById.get(userId);
+      }
+      if (sessionId && usernameById.get(sessionId)) {
+        return usernameById.get(sessionId);
       }
       const fallbackId = userId || sessionId;
       return `User ${String(fallbackId || "").slice(0, 6)}`;
     },
-    [usernameById, voiceUsernames]
+    [currentMember?.nickname, user?.username, usernameById, voiceUsernames]
   );
 
   const channelPermissions = useMemo(() => {
@@ -5331,6 +5358,9 @@ export default function App() {
                     const sessionToUserId = new Map(
                       presenceUsers.map((entry) => [entry?.id, entry?.userId || entry?.id]).filter((entry) => entry[0])
                     );
+                    if (localSessionId && user?.id) {
+                      sessionToUserId.set(localSessionId, user.id);
+                    }
                     const members = memberIds.map((id) => {
                       const actualUserId = sessionToUserId.get(id) || id;
                       return {
